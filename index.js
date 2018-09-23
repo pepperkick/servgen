@@ -1,20 +1,38 @@
 const fs = require('fs');
 const path = require('path');
 
-const debug = require('debug')('module:servgen');
+const debug = require('debug')('abskmj:servgen');
 
-module.exports.init = async(app, path = __dirname + '/services') => {
+module.exports.init = async(app, path) => {
+    // validate app parameter
+
+    if (!(app instanceof Object)) {
+        throw new Error(`app instance passed is not an object`);
+    }
+
+    if (!fs.existsSync(path)) {
+        throw new Error(`path passed is does not exist`);
+    }
+
+
     let services = {};
 
     walkDirectory(services, path);
 
     for (let serviceName in services) {
-        app[serviceName] = await require(services[serviceName])(app);
-        debug('attached a new service with name:', serviceName);
+        let service = require(services[serviceName]);
+
+        if (service && service instanceof Function) {
+            app[serviceName] = await service(app);
+            debug('attached a new service with name:', serviceName);
+        }
+        else {
+            throw new Error(`index.js did not return a function. Path: ${services[serviceName]}`);
+        }
     }
 }
 
-let walkDirectory = (defs, directoryPath) => {
+let walkDirectory = (services, directoryPath) => {
     const serviceExtension = '.js';
 
     let files = fs.readdirSync(directoryPath);
@@ -25,7 +43,17 @@ let walkDirectory = (defs, directoryPath) => {
 
         if (fs.statSync(filepath).isDirectory()) {
             debug('is a directory');
-            walkDirectory(defs, filepath);
+
+            let indexFile = path.join(filepath, 'index.js');
+
+            if (fs.existsSync(indexFile)) {
+                services[file] = indexFile;
+            }
+            else {
+                console.error('abskmj/servgen', 'index.js not found inside the service directory');
+                console.error('Directory:', filepath);
+            }
+
         }
         else {
             if (file.endsWith(serviceExtension)) {
@@ -35,7 +63,7 @@ let walkDirectory = (defs, directoryPath) => {
 
                 debug('service name:', name);
 
-                defs[name] = filepath;
+                services[name] = filepath;
             }
             else {
                 console.log('file with unknown purpose', filepath);

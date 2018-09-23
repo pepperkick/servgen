@@ -4,12 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "nodemon --exec \"mocha\"",
+    "test-debug": "nodemon --exec \"DEBUG=abskmj:servgen mocha\""
   },
   "author": "abskmj@gmail.com",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/abskmj/servgen.git"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0"
+  },
+  "dependencies": {
+    "debug": "^4.0.1"
   }
 }
