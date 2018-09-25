@@ -3,8 +3,8 @@ const path = require('path');
 
 const debug = require('debug')('abskmj:servgen');
 
-module.exports.init = async(app, path) => {
-    // validate app parameter
+module.exports.init = async(app, path, order = []) => {
+    // validate parameters
 
     if (!(app instanceof Object)) {
         throw new Error(`app instance passed is not an object`);
@@ -13,21 +13,41 @@ module.exports.init = async(app, path) => {
     if (!fs.existsSync(path)) {
         throw new Error(`path passed is does not exist`);
     }
-
+    
+    if (!(order instanceof Array)) {
+        throw new Error(`order passed is not an array`);
+    }
 
     let services = {};
 
     walkDirectory(services, path);
 
+    for (let serviceName of order) {
+        await attachService(app, services, serviceName);
+    }
+
     for (let serviceName in services) {
+        await attachService(app, services, serviceName);
+    }
+}
+
+let attachService = async(app, services, serviceName) => {
+    // check if app aleardy has a service with same name
+    if (app[serviceName]) {
+        debug('app already has a service with name:', serviceName);
+    }
+    else {
         let service = require(services[serviceName]);
 
         if (service && service instanceof Function) {
             app[serviceName] = await service(app);
             debug('attached a new service with name:', serviceName);
+            
+            // remove service from list
+            delete services[serviceName];
         }
         else {
-            throw new Error(`index.js did not return a function. Path: ${services[serviceName]}`);
+            throw new Error(`service did not return a function. Path: ${services[serviceName]}`);
         }
     }
 }

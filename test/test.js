@@ -13,8 +13,6 @@ describe('Servgen', () => {
         } catch (err){
             expect(err.message).to.equal('app instance passed is not an object');
         }
-        
-        
     });
     
     it('should check for a valid services directory as parameter', async () => {
@@ -25,8 +23,16 @@ describe('Servgen', () => {
         } catch (err){
             expect(err.message).to.equal('path passed is does not exist');
         }
-        
-        
+    });
+    
+    it('should check for a valid order array as parameter', async () => {
+        try {
+            let app = {};
+            await servgen.init(app, servicesDirectory, 'array');
+            expect(app).to.not.be.an('object');
+        } catch (err){
+            expect(err.message).to.equal('order passed is not an array');
+        }
     });
 
     it('should initialize a service from a file', async () => {
