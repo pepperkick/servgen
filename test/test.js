@@ -58,4 +58,20 @@ describe('Servgen', () => {
         expect(app).to.have.property('server');
         expect(app.server.name).to.equal('server');
     });
+
+
+    it('should throw an error if modules is not available', async() => {
+        try {
+            let app = {};
+
+            await servgen.init(app, {
+                local: servicesDirectory,
+                services: [{ module: '@abskmj/doesnotexist' }]
+            });
+
+        }
+        catch (err) {
+            expect(err.message).to.equal('Cannot find module \'@abskmj/doesnotexist\'');
+        }
+    });
 });

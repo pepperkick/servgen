@@ -4,18 +4,18 @@ const path = require('path');
 const debug = require('debug')('abskmj:servgen');
 
 module.exports.init = async(app, options = {}) => {
-    
+
     const defaultOptions = {
         services: [],
         local: null,
         order: [],
     }
-    
+
     // merge options with defaults
     options = Object.assign(defaultOptions, options);
-    
+
     // validate parameters
-    
+
     // passed app instance should be an object
     if (!(app instanceof Object)) {
         throw new Error(`app instance passed is not an object`);
@@ -25,14 +25,44 @@ module.exports.init = async(app, options = {}) => {
     if (options.local && !fs.existsSync(options.local)) {
         throw new Error(`options.local passed is does not exist`);
     }
-    
+
     // passed order should be an array 
     if (!(options.order instanceof Array)) {
         throw new Error(`options.order passed is not an array`);
     }
 
     let services = {};
-    
+
+    // walk the services option
+
+    for (let servDef of options.services) {
+        if (servDef.module) {
+
+            let defaultServDef = {
+                parameters: []
+            }
+
+            servDef = Object.assign(servDef, defaultServDef);
+
+            debug('processing a server defination:', JSON.stringify(servDef))
+
+            let service = require(servDef.module);
+
+            let name = servDef.as || servDef.module.split('servgen-').splice(-1);
+
+            debug('with name:', name);
+
+            services[name] = {
+                service,
+                parameters: servDef.parameters
+            }
+
+        }
+        else {
+            throw new Error(`service defination does not have a module name`);
+        }
+    }
+
     // walk the local path and get all available services
     if (options.local) walkDirectory(services, options.local);
 
@@ -40,7 +70,7 @@ module.exports.init = async(app, options = {}) => {
     for (let serviceName of options.order) {
         await attachService(app, services, serviceName);
     }
-    
+
     // attach remaining services
     for (let serviceName in services) {
         await attachService(app, services, serviceName);
@@ -53,12 +83,16 @@ let attachService = async(app, services, serviceName) => {
         debug('app already has a service with name:', serviceName);
     }
     else {
-        let service = require(services[serviceName]);
-
+        let service = services[serviceName].service;
+        
+        let parameters = services[serviceName].parameters || [];
+        // add app as first parameter
+        parameters.unshift(app);
+        
         if (service && service instanceof Function) {
-            app[serviceName] = await service(app);
+            app[serviceName] = await service.apply(null, parameters);
             debug('attached a new service with name:', serviceName);
-            
+
             // remove service from list
             delete services[serviceName];
         }
@@ -83,7 +117,7 @@ let walkDirectory = (services, directoryPath) => {
             let indexFile = path.join(filepath, 'index.js');
 
             if (fs.existsSync(indexFile)) {
-                services[file] = indexFile;
+                services[file] = { service: require(indexFile) };
             }
             else {
                 console.error('abskmj/servgen', 'index.js not found inside the service directory');
@@ -99,7 +133,7 @@ let walkDirectory = (services, directoryPath) => {
 
                 debug('service name:', name);
 
-                services[name] = filepath;
+                services[name] = { service: require(filepath) };
             }
             else {
                 console.log('file with unknown purpose', filepath);
