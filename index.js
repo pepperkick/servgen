@@ -3,29 +3,45 @@ const path = require('path');
 
 const debug = require('debug')('abskmj:servgen');
 
-module.exports.init = async(app, path, order = []) => {
+module.exports.init = async(app, options = {}) => {
+    
+    const defaultOptions = {
+        services: [],
+        local: null,
+        order: [],
+    }
+    
+    // merge options with defaults
+    options = Object.assign(defaultOptions, options);
+    
     // validate parameters
-
+    
+    // passed app instance should be an object
     if (!(app instanceof Object)) {
         throw new Error(`app instance passed is not an object`);
     }
 
-    if (!fs.existsSync(path)) {
-        throw new Error(`path passed is does not exist`);
+    // passed local path should exists
+    if (options.local && !fs.existsSync(options.local)) {
+        throw new Error(`options.local passed is does not exist`);
     }
     
-    if (!(order instanceof Array)) {
-        throw new Error(`order passed is not an array`);
+    // passed order should be an array 
+    if (!(options.order instanceof Array)) {
+        throw new Error(`options.order passed is not an array`);
     }
 
     let services = {};
+    
+    // walk the local path and get all available services
+    if (options.local) walkDirectory(services, options.local);
 
-    walkDirectory(services, path);
-
-    for (let serviceName of order) {
+    // attach serices according to the order
+    for (let serviceName of options.order) {
         await attachService(app, services, serviceName);
     }
-
+    
+    // attach remaining services
     for (let serviceName in services) {
         await attachService(app, services, serviceName);
     }
