@@ -23,7 +23,7 @@ module.exports.init = async(app, options = {}) => {
 
     // passed local path should exists
     if (options.local && !fs.existsSync(options.local)) {
-        throw new Error(`options.local passed is does not exist`);
+        throw new Error(`options.local passed does not exist`);
     }
 
     // passed order should be an array 
@@ -42,7 +42,7 @@ module.exports.init = async(app, options = {}) => {
                 parameters: []
             }
 
-            servDef = Object.assign(servDef, defaultServDef);
+            servDef = Object.assign(defaultServDef, servDef);
 
             debug('processing a server defination:', JSON.stringify(servDef))
 
