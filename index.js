@@ -44,7 +44,7 @@ module.exports.init = async(app, options = {}) => {
 
             servDef = Object.assign(defaultServDef, servDef);
 
-            debug('processing a server defination:', JSON.stringify(servDef))
+            debug('processing a server definition:', JSON.stringify(servDef))
 
             let service = require(servDef.module);
 
@@ -59,14 +59,14 @@ module.exports.init = async(app, options = {}) => {
 
         }
         else {
-            throw new Error(`service defination does not have a module name`);
+            throw new Error(`service definition does not have a module name`);
         }
     }
 
     // walk the local path and get all available services
     if (options.local) walkDirectory(services, options.local);
 
-    // attach serices according to the order
+    // attach services according to the order
     for (let serviceName of options.order) {
         await attachService(app, services, serviceName);
     }
@@ -78,7 +78,7 @@ module.exports.init = async(app, options = {}) => {
 }
 
 let attachService = async(app, services, serviceName) => {
-    // check if app aleardy has a service with same name
+    // check if app already has a service with same name
     if (app[serviceName]) {
         debug('app already has a service with name:', serviceName);
     }
