@@ -135,8 +135,9 @@ let walkDirectory = (services, directoryPath) => {
 
                 services[name] = { service: require(filepath) };
             }
-            else {
-                console.log('file with unknown purpose', filepath);
+            else {                
+                if (!file.startsWith("."))
+                    console.log('file with unknown purpose', filepath);
             }
         }
     });
